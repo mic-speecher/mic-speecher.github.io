@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<style>
+    header {
+        background-color: black;
+        color: white;
+        text-align: center;
+        height: 100px;
+    }
+    body {
+        text-align: center;
+    }
+
+    #parlerButton {
+        width: 200px;
+        height: 50px;
+        border-radius: 20px;
+        background-color: green;
+    }
+
+    #stopButton {
+        width: 200px;
+        height: 50px;
+        border-radius: 20px;
+        background-color: red;
+    }
+
+    .hidden {
+        display: none;
+    }
+
+    img {
+        height: 400px;
+        width: 200px;
+        display: block;
+        position: absolute;
+        right: 43%;
+        bottom: 10%
+    }
+</style>
+</head>
+<body>
+    <header>
+        <h1>Bienvenu sur speecher </h1>
+    </header>
+    <h2>plus besoin de vous tuer la voix !!</h2>
+    <button id="parlerButton">commencer à parler</button>
+    <button id="stopButton" disabled>arrêter de parler</button>
+    <img src="C:\Users\Timothée PIOTRE\OneDrive\Images\IMG_0063.PNG">
+    <script>
+        let audioContext;
+        let microphone;
+        let audioSource;
+
+        document.getElementById('parlerButton').addEventListener('click', async () => {
+            try {
+                // Création d'un contexte audio
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                
+                // Accéder au microphone de l'utilisateur
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                
+                // Connecter le microphone au contexte audio
+                microphone = audioContext.createMediaStreamSource(stream);
+                
+                // Connecter le microphone directement aux haut-parleurs
+                audioSource = audioContext.createGain();
+                microphone.connect(audioSource);
+                audioSource.connect(audioContext.destination);
+
+                // Mise à jour de l'interface
+                document.getElementById('parlerButton').disabled = true;
+                document.getElementById('stopButton').disabled = false;
+            } catch (err) {
+                console.error('Erreur lors de l\'accès au microphone :', err);
+            }
+        });
+
+        document.getElementById('stopButton').addEventListener('click', () => {
+            // Arrêter l'audio et libérer les ressources
+            if (audioContext) {
+                audioContext.close();
+                audioContext = null;
+            }
+
+            document.getElementById('parlerButton').disabled = false;
+            document.getElementById('stopButton').disabled = true;
+        });
+    </script>
+</body>
+</html>
