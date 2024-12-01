@@ -83,7 +83,7 @@
                 
                 // Créer un GainNode pour augmenter le volume
                 gainNode = audioContext.createGain();
-                gainNode.gain.value = 50;  // Multiplier le volume par 10
+                gainNode.gain.value = 25;  // Multiplier le volume par 10
 
                 // Connecter le microphone au gainNode, puis au haut-parleur Bluetooth
                 microphone.connect(gainNode);
