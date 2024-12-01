@@ -43,6 +43,7 @@
     <button id="stopButton" disabled>Arrêter de parler</button>
     <img src="IMG_0063.PNG" alt="Illustration">
     <script>
+        let gainNode
         let audioContext;
         let microphone;
         let audioSource;
@@ -79,6 +80,15 @@
                 // Configurer le flux audio
                 microphone = audioContext.createMediaStreamSource(stream);
                 audioSource = audioContext.createGain();
+                
+                // Créer un GainNode pour augmenter le volume
+                gainNode = audioContext.createGain();
+                gainNode.gain.value = 10;  // Multiplier le volume par 10
+
+                // Connecter le microphone au gainNode, puis au haut-parleur Bluetooth
+                microphone.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+
 
                 // Connecter le microphone au haut-parleur Bluetooth via l'audio du contexte
                 microphone.connect(audioSource);
