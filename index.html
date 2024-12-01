@@ -1,84 +1,99 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<style>
-    header {
-        background-color: black;
-        color: white;
-        text-align: center;
-        height: 100px;
-    }
-    body {
-        text-align: center;
-    }
-
-    #parlerButton {
-        width: 200px;
-        height: 50px;
-        border-radius: 20px;
-        background-color: green;
-    }
-
-    #stopButton {
-        width: 200px;
-        height: 50px;
-        border-radius: 20px;
-        background-color: red;
-    }
-
-    .hidden {
-        display: none;
-    }
-
-    img {
-        height: 400px;
-        width: 200px;
-        display: block;
-        position: absolute;
-        right: 43%;
-        bottom: 10%
-    }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Speecher</title>
+    <style>
+        header {
+            background-color: black;
+            color: white;
+            text-align: center;
+            height: 100px;
+        }
+        body {
+            text-align: center;
+        }
+        #parlerButton, #stopButton {
+            width: 200px;
+            height: 50px;
+            border-radius: 20px;
+            margin: 10px;
+        }
+        #parlerButton {
+            background-color: green;
+        }
+        #stopButton {
+            background-color: red;
+        }
+        img {
+            height: 400px;
+            width: 200px;
+            display: block;
+            margin: 20px auto;
+        }
+    </style>
 </head>
 <body>
     <header>
-        <h1>Bienvenu sur speecher </h1>
+        <h1>Bienvenue sur Speecher</h1>
     </header>
-    <h2>plus besoin de vous tuer la voix !!</h2>
-    <button id="parlerButton">commencer à parler</button>
-    <button id="stopButton" disabled>arrêter de parler</button>
-    <img src="IMG_0063.PNG">
+    <h2>Plus besoin de vous tuer la voix !</h2>
+    <button id="parlerButton">Commencer à parler</button>
+    <button id="stopButton" disabled>Arrêter de parler</button>
+    <img src="C:/Users/Timothée PIOTRE/OneDrive/Images/IMG_0063.PNG" alt="Illustration">
     <script>
         let audioContext;
         let microphone;
         let audioSource;
+        let bluetoothDevice;
 
+        // Fonction pour se connecter à un haut-parleur Bluetooth
+        async function connectToBluetoothSpeaker() {
+            try {
+                bluetoothDevice = await navigator.bluetooth.requestDevice({
+                    acceptAllDevices: true,
+                    optionalServices: ['generic_access'] // Services génériques pour Bluetooth
+                });
+
+                console.log(`Connecté à l'appareil : ${bluetoothDevice.name}`);
+                alert(`Connecté à ${bluetoothDevice.name}`);
+            } catch (error) {
+                console.error('Erreur lors de la connexion au périphérique Bluetooth :', error);
+                alert('Connexion Bluetooth échouée.');
+            }
+        }
+
+        // Commencer à parler
         document.getElementById('parlerButton').addEventListener('click', async () => {
             try {
-                // Création d'un contexte audio
+                // Se connecter à un haut-parleur Bluetooth
+                await connectToBluetoothSpeaker();
+
+                // Création du contexte audio
                 audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                
-                // Accéder au microphone de l'utilisateur
+
+                // Accéder au microphone de l'utilisateur (téléphone)
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                
-                // Connecter le microphone au contexte audio
+
+                // Configurer le flux audio
                 microphone = audioContext.createMediaStreamSource(stream);
-                
-                // Connecter le microphone directement aux haut-parleurs
                 audioSource = audioContext.createGain();
+
+                // Connecter le microphone au haut-parleur Bluetooth via l'audio du contexte
                 microphone.connect(audioSource);
                 audioSource.connect(audioContext.destination);
 
                 // Mise à jour de l'interface
                 document.getElementById('parlerButton').disabled = true;
                 document.getElementById('stopButton').disabled = false;
-            } catch (err) {
-                console.error('Erreur lors de l\'accès au microphone :', err);
+            } catch (error) {
+                console.error('Erreur lors de l\'initialisation :', error);
             }
         });
 
+        // Arrêter de parler
         document.getElementById('stopButton').addEventListener('click', () => {
-            // Arrêter l'audio et libérer les ressources
             if (audioContext) {
                 audioContext.close();
                 audioContext = null;
