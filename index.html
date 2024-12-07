@@ -1,55 +1,125 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4740651300862299"
-     crossorigin="anonymous"></script>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Speecher</title>
-    <style>
-        header {
-            background-color: black;
-            color: white;
-            text-align: center;
-            height: 100px;
-        }
-        body {
-            text-align: center;
-        }
-        #parlerButton, #stopButton {
-            width: 200px;
-            height: 50px;
-            border-radius: 20px;
-            margin: 10px;
-        }
-        #parlerButton {
-            background-color: green;
-        }
-        #stopButton {
-            background-color: red;
-        }
-        img {
-            height: 400px;
-            width: 200px;
+<style>
+    header {
+        background-color: black;
+        color: white;
+        text-align: center;
+        height: 100px;
+    }
+    body {
+        text-align: center;
+        background-color: rgb(29, 29, 29);
+    }
+
+    #parlerButton {
+        color: green;
+        width: 100px;
+        height: 100px;
+        border-radius: 50px;
+        background-color: rgb(53, 51, 51);
+        display: block;
+        position: absolute;
+        left: 45%;
+        top: 25%;
+        font-size: 40px;
+    }
+
+    #stopButton {
+        width: 100px;
+        height: 100px;
+        border-radius: 50px;
+        background-color: rgb(53, 51, 51);
+        display: block;
+        position: absolute;
+        left: 45%;
+        color: red;
+        top: 40%;
+        font-size: 40px;
+    }
+
+    #gainPlus {
+        width: 50px;
+        height: 50px;
+        border-radius: 50px;
+        background-color: rgb(53, 51, 51);
+        display: block;
+        position: absolute;
+        left: 25%;
+        color: red;
+        top: 27.5%;
+        font-size: 30px;
+    }
+    #gainLess {
+        width: 50px;
+        height: 50px;
+        border-radius: 50px;
+        background-color: rgb(53, 51, 51);
+        display: block;
+        position: absolute;
+        left: 25%;
+        color: blue;
+        top: 42.5%;
+        font-size: 30px;
+    }
+
+    #gainShowing {
+        color: rgb(53, 51, 51);
+        display: block;
+        position: absolute;
+        left: 21%;
+        top: 33.5%;
+        border: 6px solid rgb(53, 51, 51);
+        border-radius: 10px;
+    }
+    .hidden {
+        display: none;
+    }
+    canvas {
+            border: 6px solid rgb(53, 51, 51);
             display: block;
+            border-radius: 10px;
+            position: absolute;
+            top: 25%;
+            right: 10%;
+            width: 200px;
+            height: 200px;
             margin: 20px auto;
         }
-    </style>
+
+
+</style>
 </head>
 <body>
     <header>
-        <h1>Bienvenue sur Speecher</h1>
+        <h1>Bienvenu sur speecher </h1>
     </header>
-    <h2>Plus besoin de vous tuer la voix !</h2>
-    <button id="parlerButton">Commencer à parler</button>
-    <button id="stopButton" disabled>Arrêter de parler</button>
-    <img src="IMG_0063.PNG" alt="Illustration">
+    <h2 id="gainShowing"></h2>
+    <button id="gainPlus" onclick="GainPlus()">+</button>
+    <button id="gainLess" onclick="GainLess()">-</button>
+    <canvas id="volumeCanvas" width="600" height="200"></canvas>
+    <button id="parlerButton">►</button>
+    <button id="stopButton" disabled>■</button>
     <script>
-        let gainNode
+        let GAIN = 10;
+        let gainNode;
         let audioContext;
         let microphone;
         let audioSource;
         let bluetoothDevice;
+        document.getElementById("gainShowing").innerHTML = '|  gain :' + GAIN + '%  |';
+        
+
+        function GainPlus() {
+            GAIN = GAIN + 1;
+            document.getElementById("gainShowing").innerHTML = '|  gain :' + GAIN + '%  |';
+        }
+
+        function GainLess() {
+            GAIN = GAIN - 1;
+            document.getElementById("gainShowing").innerHTML ='|  gain :' + GAIN + '%  |';
+        }
 
         // Fonction pour se connecter à un haut-parleur Bluetooth
         async function connectToBluetoothSpeaker() {
@@ -85,7 +155,7 @@
                 
                 // Créer un GainNode pour augmenter le volume
                 gainNode = audioContext.createGain();
-                gainNode.gain.value = 25;  // Multiplier le volume par 10
+                gainNode.gain.value = GAIN;  // Multiplier le volume par 10
 
                 // Connecter le microphone au gainNode, puis au haut-parleur Bluetooth
                 microphone.connect(gainNode);
@@ -103,6 +173,73 @@
                 console.error('Erreur lors de l\'initialisation :', error);
             }
         });
+         // Fonction pour démarrer la visualisation
+         document.getElementById('parlerButton').addEventListener('click', async () => {
+            try {
+                // Création du contexte audio
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+                // Accéder au microphone de l'utilisateur
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+                // Créer un MediaStreamSource à partir du microphone
+                microphone = audioContext.createMediaStreamSource(stream);
+
+                // Créer un AnalyserNode
+                analyserNode = audioContext.createAnalyser();
+                analyserNode.fftSize = 256; // Taille de la FFT (plus petit = plus précis)
+                dataArray = new Uint8Array(analyserNode.frequencyBinCount);
+
+                // Connecter le microphone à l'AnalyserNode
+                microphone.connect(analyserNode);
+
+                // Démarrer le rendu
+                renderVolume();
+
+                // Mise à jour des boutons
+                document.getElementById('parlerButton').disabled = true;
+                document.getElementById('stopButton').disabled = false;
+            } catch (error) {
+                console.error('Erreur lors de l\'initialisation :', error);
+            }
+        });
+
+        // Fonction pour arrêter la visualisation
+        document.getElementById('stopButton').addEventListener('click', () => {
+            if (audioContext) {
+                audioContext.close();
+                cancelAnimationFrame(animationFrameId); // Stoppe l'animation
+            }
+
+            // Réinitialiser les boutons
+            document.getElementById('parlerButton').disabled = false;
+            document.getElementById('stopButton').disabled = true;
+        });
+
+        // Fonction pour dessiner le volume
+        function renderVolume() {
+            const canvas = document.getElementById('volumeCanvas');
+            const ctx = canvas.getContext('2d');
+
+            function draw() {
+                analyserNode.getByteFrequencyData(dataArray); // Récupérer les données de fréquence
+
+                // Calculer le volume (moyenne des amplitudes)
+                const volume = dataArray.reduce((acc, val) => acc + val, 0) / dataArray.length;
+
+                // Effacer le canvas
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                // Dessiner le volume sous forme de barre
+                ctx.fillStyle = 'green';
+                ctx.fillRect(0, canvas.height - volume, canvas.width, volume);
+
+                // Répéter l'animation
+                animationFrameId = requestAnimationFrame(draw);
+            }
+
+            draw(); // Lancer l'animation
+        }
 
         // Arrêter de parler
         document.getElementById('stopButton').addEventListener('click', () => {
